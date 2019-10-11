@@ -1,0 +1,67 @@
+version: '3.4'
+
+services:
+  db:
+    build: ./app/docker/postgres
+    environment:
+      - POSTGRES_DB=app
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=symfony
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - target: 5432
+        published: 5432
+        protocol: tcp
+
+  php:
+    build:
+      context: ./app
+    image: app_php
+    depends_on:
+      - db
+    volumes:
+      - ./app:/app/app:rw
+
+  app:
+    build:
+      context: ./app
+    volumes:
+      - ./app/:/app/app:rw
+    depends_on:
+      - php
+    ports:
+      - target: 80
+        published: 8080
+        protocol: tcp
+
+  client:
+    build:
+      context: ./client
+    volumes:
+      - ./client:/app/client:rw,cached
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+
+  yarn:
+    build:
+      context: ./client
+    image: client_node
+    volumes:
+      - ./client:/app/client:rw,cached
+
+  admin:
+    build:
+      context: ./admin
+    volumes:
+      - ./admin:/app/admin:rw,cached
+    ports:
+      - target: 3000
+        published: 81
+        protocol: tcp
+
+volumes:
+  db-data:
+    driver: local

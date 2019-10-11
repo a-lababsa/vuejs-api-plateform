@@ -1,0 +1,1 @@
+FROM client_nginx
